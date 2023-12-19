@@ -1,0 +1,241 @@
+
+--DROP SCHEMA IF EXISTS `data-evolution-rosan.raw_wwi_ext`;
+CREATE SCHEMA IF NOT EXISTS `data-evolution-rosan.raw_wwi_ext`
+OPTIONS (
+  description = 'This dataset serves as the raw layer of the Data Warehouse, holding tables with sources from World Wide Importers.  It\'s used to store raw tables before further transformations.',
+  location = 'europe-west1'
+);
+
+-- Creating external table for APPLICATION COUNTRIES
+CREATE OR REPLACE EXTERNAL TABLE `raw_wwi_ext.application-countries` (
+  CountryID STRING,
+  CountryName STRING,
+  FormalName STRING,
+  IsoAlpha3Code STRING,
+  IsoNumericCode STRING,
+  CountryType STRING,
+  LatestRecordedPopulation STRING,
+  Continent STRING,
+  Region STRING,
+  Subregion STRING,
+  LastEditedBy STRING
+)
+OPTIONS (
+  format = 'CSV',
+  field_delimiter = ',',
+  skip_leading_rows=1,
+  uris = ['gs://raw-wwi/data-evolution-wwi/csv/application.countries/Application.Countries.csv']
+);
+
+-- Creating external partitioned table for CUSTOMER CATEGORIES
+CREATE OR REPLACE EXTERNAL TABLE `raw_wwi_ext.sales-customercategories` (
+  CustomerCategoryID STRING,
+  CustomerCategoryName STRING,
+  LastEditedBy STRING,
+  ValidFrom STRING,
+  ValidTo STRING
+)
+WITH PARTITION COLUMNS (
+  year STRING,
+  month STRING  
+)
+OPTIONS (
+  uris = ['gs://raw-wwi/data-evolution-wwi/csv/sales.customercategories/*.csv'], -- Viktigt med ".csv" efter wildcard-symbolen eftersom...
+  format = 'CSV',
+  hive_partition_uri_prefix = 'gs://raw-wwi/data-evolution-wwi/csv/sales.customercategories/',
+  field_delimiter = ',',
+  skip_leading_rows=1
+);
+
+-- Creating external partitioned table for CUSTOMERS
+CREATE OR REPLACE EXTERNAL TABLE `raw_wwi_ext.sales-customers` (
+  CustomerID STRING,
+  CustomerName STRING,
+  BillToCustomerID STRING,
+  CustomerCategoryID STRING,
+  BuyingGroupID STRING,
+  PrimaryContactPersonID STRING,
+  AlternateContactPersonID STRING,
+  DeliveryMethodID STRING,
+  DeliveryCityID STRING,
+  PostalCityID STRING,
+  CreditLimit STRING,
+  AccountOpenedDate STRING,
+  StandardDiscountPercentage STRING,
+  IsStatementSent STRING,
+  IsOnCreditHold STRING,
+  PaymentDays STRING,
+  PhoneNumber STRING,
+  FaxNumber STRING,
+  DeliveryRun STRING,
+  RunPosition STRING,
+  WebsiteURL STRING,
+  DeliveryAddressLine1 STRING,
+  DeliveryAddressLine2 STRING,
+  DeliveryPostalCode STRING,
+  DeliveryLocation STRING,
+  PostalAddressLine1 STRING,
+  PostalAddressLine2 STRING,
+  PostalPostalCode STRING,
+  LastEditedBy STRING,
+  ValidFrom STRING,
+  ValidTo STRING
+)
+WITH PARTITION COLUMNS (
+  year STRING,
+  month STRING  
+)
+OPTIONS (
+  uris = ['gs://raw-wwi/data-evolution-wwi/csv/sales.customers/*.csv'],
+  format = 'CSV',
+  hive_partition_uri_prefix = 'gs://raw-wwi/data-evolution-wwi/csv/sales.customers/',
+  field_delimiter = ',',
+  skip_leading_rows=1
+);
+
+-- Creating external partitioned table for INVOICE LINES
+CREATE OR REPLACE EXTERNAL TABLE `raw_wwi_ext.sales-invoicelines` (
+  InvoiceLineID STRING,
+  InvoiceID STRING,
+  StockItemID STRING,
+  Description STRING,
+  PackageTypeID STRING,
+  Quantity STRING,
+  UnitPrice STRING,
+  TaxRate STRING,
+  TaxAmount STRING,
+  LineProfit STRING,
+  ExtendedPrice STRING,
+  LastEditedBy STRING,
+  LastEditedWhen STRING
+)
+WITH PARTITION COLUMNS (
+  year STRING, -- Innehåller year = 2013 & 2016
+  month STRING  -- Innehåller month = 01-05, samt 99
+)
+OPTIONS (
+  uris = ['gs://raw-wwi/data-evolution-wwi/csv/sales.invoicelines/*.csv'],
+  format = 'CSV',
+  hive_partition_uri_prefix = 'gs://raw-wwi/data-evolution-wwi/csv/sales.invoicelines/',
+  field_delimiter = ',',
+  skip_leading_rows=1
+);
+
+-- Creating external partitioned table for INVOICES
+CREATE OR REPLACE EXTERNAL TABLE `raw_wwi_ext.sales-invoices` (
+  InvoiceID STRING,
+  CustomerID STRING,
+  BillToCustomerID STRING,
+  OrderID STRING,
+  DeliveryMethodID STRING,
+  ContactPersonID STRING,
+  AccountsPersonID STRING,
+  SalespersonPersonID STRING,
+  PackedByPersonID STRING,
+  InvoiceDate STRING,
+  CustomerPurchaseOrderNumber STRING,
+  IsCreditNote STRING,
+  CreditNoteReason STRING,
+  Comments STRING,
+  DeliveryInstructions STRING,
+  InternalComments STRING,
+  TotalDryItems STRING,
+  TotalChillerItems STRING,
+  DeliveryRun STRING,
+  RunPosition STRING,
+  ReturnedDeliveryData STRING,
+  ConfirmedDeliveryTime STRING,
+  ConfirmedReceivedBy STRING,
+  LastEditedBy STRING,
+  LastEditedWhen STRING
+)
+WITH PARTITION COLUMNS (
+  year STRING, -- Innehåller year = 2013 & 2016
+  month STRING  -- Innehåller month = 01-05, samt 99
+)
+OPTIONS (
+  uris = ['gs://raw-wwi/data-evolution-wwi/csv/sales.invoices/*.csv'],
+  format = 'CSV',
+  hive_partition_uri_prefix = 'gs://raw-wwi/data-evolution-wwi/csv/sales.invoices/',
+  field_delimiter = ',',
+  skip_leading_rows=1
+);
+
+-- Creating external partitioned table for WAREHOUSE STOCKGROUPS
+CREATE OR REPLACE EXTERNAL TABLE `raw_wwi_ext.warehouse-stockgroups` (
+  StockGroupID STRING,
+  StockGroupName STRING,
+  LastEditedBy STRING
+)
+WITH PARTITION COLUMNS (
+  year STRING, -- Innehåller year = 2013
+  month STRING  -- Innehåller month = 99
+)
+OPTIONS (
+  uris = ['gs://raw-wwi/data-evolution-wwi/csv/warehouse.stockgroups/*.csv'],
+  format = 'CSV',
+  hive_partition_uri_prefix = 'gs://raw-wwi/data-evolution-wwi/csv/warehouse.stockgroups/',
+  field_delimiter = ',',
+  skip_leading_rows=1
+);
+
+-- Creating external partitioned table for WAREHOUSE STOCKITEM
+CREATE OR REPLACE EXTERNAL TABLE `raw_wwi_ext.warehouse-stockitem` (
+  StockItemID STRING,
+  StockItemName STRING,
+  SupplierID STRING,
+  ColorID STRING,
+  UnitPackageID STRING,
+  OuterPackageID STRING,
+  Brand STRING,
+  Size STRING,
+  LeadTimeDays STRING,
+  QuantityPerOuter STRING,
+  IsChillerStock STRING,
+  Barcode STRING,
+  TaxRate STRING,
+  UnitPrice STRING,
+  RecommendedRetailPrice STRING,
+  TypicalWeightPerUnit STRING,
+  MarketingComments STRING,
+  InternalComments STRING,
+  Photo STRING,
+  CustomFields STRING,
+  Tags STRING,
+  SearchDetails STRING,
+  LastEditedBy STRING,
+  ValidFrom STRING,
+  ValidTo STRING
+)
+WITH PARTITION COLUMNS (
+  year STRING, -- Innehåller year = 2013
+  month STRING  -- Innehåller month = 99
+)
+OPTIONS (
+  uris = ['gs://raw-wwi/data-evolution-wwi/csv/warehouse.stockitem/*.csv'],
+  format = 'CSV',
+  hive_partition_uri_prefix = 'gs://raw-wwi/data-evolution-wwi/csv/warehouse.stockitem/',
+  field_delimiter = ',',
+  skip_leading_rows=1
+);
+
+-- Creating external partitioned table for WAREHOUSE STOCKITEMSTOCKGROUPS
+CREATE OR REPLACE EXTERNAL TABLE `raw_wwi_ext.warehouse-stockitemstockgroups` (
+  StockItemStockGroupID STRING,
+  StockItemID STRING,
+  StockGroupID STRING,
+  LastEditedBy STRING,
+  LastEditedWhen STRING
+
+)
+WITH PARTITION COLUMNS (
+  year STRING, -- Innehåller year = 2013
+  month STRING  -- Innehåller month = 99
+)
+OPTIONS (
+  uris = ['gs://raw-wwi/data-evolution-wwi/csv/warehouse.stockitemstockgroups/*.csv'],
+  format = 'CSV',
+  hive_partition_uri_prefix = 'gs://raw-wwi/data-evolution-wwi/csv/warehouse.stockitemstockgroups/',
+  field_delimiter = ',',
+  skip_leading_rows=1
+);
