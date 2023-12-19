@@ -1,0 +1,46 @@
+
+from datetime import datetime
+from airflow import DAG
+from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
+
+
+default_args = {
+    # The start_date describes when a DAG is valid / can be run. Set this to a
+    # fixed point in time rather than dynamically, since it is evaluated every
+    # time a DAG is parsed. See:
+    # https://airflow.apache.org/faq.html#what-s-the-deal-with-start-date
+    'start_date': datetime(2023, 12, 14),
+    'owner': 'airflow',
+    'retries': 1,
+}
+
+dag = DAG(
+    'application_countries_load', # Name for the current DAG
+    default_args=default_args,
+    schedule=None
+)
+
+load_csv = GCSToBigQueryOperator(
+    task_id='application_countries_load',
+    bucket='raw-wwi',
+    source_objects=['data-evolution-wwi/csv/application.countries/Application.Countries.csv'],
+    destination_project_dataset_table='data-evolution-rosan.raw_wwi.application-countries',
+    schema_fields=[
+        {'name': 'CountryID', 'type': 'STRING'},
+        {'name': 'CountryName', 'type': 'STRING'},
+        {'name': 'FormalName', 'type': 'STRING'},
+        {'name': 'IsoAlpha3Code', 'type': 'STRING'},
+        {'name': 'IsoNumericCode', 'type': 'STRING'},
+        {'name': 'CountryType', 'type': 'STRING'},
+        {'name': 'LatestRecordedPopulation', 'type': 'STRING'},
+        {'name': 'Continent', 'type': 'STRING'},
+        {'name': 'Region', 'type': 'STRING'},
+        {'name': 'Subregion', 'type': 'STRING'},
+        {'name': 'LastEditedBy', 'type': 'STRING'}
+    ],
+    write_disposition='WRITE_TRUNCATE',
+    dag=dag,
+    external_table=False # Must be specified if destination table is an external table
+)
+
+load_csv
